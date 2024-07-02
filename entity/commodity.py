@@ -7,6 +7,7 @@ from entity.coupon import Coupon
 class Commodity:
     item_id: str
     name: str
+    material_id: str = None
     brand_name: str = None
     tb_price: str = None
     our_price: str = None
@@ -21,6 +22,8 @@ class Commodity:
     image_url: str = None
     click_url: str = None
     annual_vol: str = None
+    level_one_category_id: int = None
+    level_one_category_name: str = None
     tk_total_sales: str = None
     coupon_url: str = None
     has_full_reduction: str = '否'

@@ -1,3 +1,4 @@
+import sqlite3
 import time
 import json
 from dataclasses import asdict
@@ -7,41 +8,60 @@ import random
 
 from tqdm import tqdm
 
+from entity.commodity import Commodity
 from untils.common import save_pic, del_pic
 from untils.csv_util import write_csv
+from untils.sqlite_util import create_table_from_dataclass, insert_dataclass_instance
 from untils.tb_top_api import TbApiClient, MATERIAL_SUBJECT, MATERIAL_TYPE
+RESOURCE_DIR = 'resources/'
+conn = sqlite3.connect('taobao.db')
+# 根据数据类创建表
+# create_table_from_dataclass(conn, Commodity)
 
 
-def fetch_recommend_commodity_list(tb_client):
-    material_id_set = set()
-    for material_subject in MATERIAL_SUBJECT.keys():
-        for material_type in MATERIAL_TYPE.keys():
-            materials = tb_client.tabao_tbk_fetch_materials(material_subject, material_type)
-            for material in materials:
-                material_id_set.add(material.material_id)
-
+def handle_commodity_list(tb_client, commodity_list):
     wait_publish_commodity_list = []
+    for commodity in commodity_list:
+        if not commodity.alimama_coupon_set:
+            continue
+        if not commodity.click_url:
+            continue
+        if not commodity.coupon_url:
+            continue
+        commodity.click_url = tb_client.taobao_tbk_tpwd_create('内部独家', commodity.click_url)
+        commodity.coupon_url = tb_client.taobao_tbk_tpwd_create('内部独家', commodity.coupon_url)
+        wait_publish_commodity_list.append(commodity)
+    print('开始写入到csv文件')
+    write_commodity_list(wait_publish_commodity_list)
+    print('结束写入到csv文件')
+    # print('开始写入到数据库')
+    # save_commodity_list(wait_publish_commodity_list)
+    # print('结束写入到数据库')
+
+
+def fetch_recommend_commodity_list(tb_client, material_id_set=None):
+    if not material_id_set:
+        material_id_set = set()
+        with open(RESOURCE_DIR + "material_id.txt") as f:
+            for material_id in f.readlines():
+                material_id_set.add(material_id.strip())
+        for material_subject in MATERIAL_SUBJECT.keys():
+            for material_type in MATERIAL_TYPE.keys():
+                materials = tb_client.tabao_tbk_fetch_materials(material_subject, material_type)
+                for material in materials:
+                    material_id_set.add(material.material_id)
+
     for material_id in tqdm(material_id_set):
         page_no = 1
-        commodity_list, ending_flag = tb_client.tabao_tbk_material_recommend(material_id, page_no)
-        while not ending_flag:
-            page_no += 1
-            next_commodity_list, ending_flag = tb_client.tabao_tbk_material_recommend(material_id, page_no)
-        for commodity in commodity_list:
-            if not commodity.alimama_coupon_set:
-                continue
-            if not commodity.click_url:
-                continue
-            if not commodity.coupon_url:
-                continue
-            commodity.click_url = tb_client.taobao_tbk_tpwd_create('内部独家', commodity.click_url)
-            url_convert_dict = tb_client.taobao_tbk_urls_spread([commodity.coupon_url])
-            if commodity.coupon_url not in url_convert_dict:
-                continue
-            commodity.coupon_url = url_convert_dict[commodity.coupon_url]
-            wait_publish_commodity_list.append(commodity)
-
-    return wait_publish_commodity_list
+        try:
+            commodity_list, ending_flag = tb_client.tabao_tbk_material_recommend(material_id, page_no)
+            while not ending_flag:
+                handle_commodity_list(tb_client, commodity_list)
+                page_no += 1
+                commodity_list, ending_flag = tb_client.tabao_tbk_material_recommend(material_id, page_no)
+            handle_commodity_list(tb_client, commodity_list)
+        except Exception as ex:
+            print(ex)
 
 
 def expand_coupon(commodity, prefix, coupon_set):
@@ -71,7 +91,15 @@ def write_commodity_list(commodity_list):
 
         results.append(asdict(commodity))
     if results:
-        write_csv(results[0].keys(), results, '淘宝商品.csv')
+        write_csv(results[0].keys(), results, f'{RESOURCE_DIR}淘宝商品.csv')
+
+
+def save_commodity_list(commodity_list):
+    # 连接到 SQLite 数据库（如果数据库不存在，则会自动创建）
+
+    # 将对象数据插入数据库
+    for commodity in commodity_list:
+        insert_dataclass_instance(conn, commodity)
 
 
 def push_commodity_to_wechat(group_name, commodity):

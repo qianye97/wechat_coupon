@@ -45,6 +45,10 @@ COUPON_SRC_SCENE = {
     None: None
 }
 
+FIRST_CLASS_ITEM = ['"服装鞋包"', '手机数码', '家用电器', '美妆饰品', '母婴用品', '家居建材', '百货食品', '运动户外']
+# SECOND_CLASS_ITEM = ['服饰配件', '流行男鞋', '男装', '内衣', '女鞋', '女装', '箱包皮具', '3c数码配件', '文具电教', '文化用品', '商务用品', '厨房电器', '大家电', '个人护理', '保健', '按摩器材', '家庭保健', '生活电器', '影音电器', '彩妆', '香水', '美妆工具', '美容护肤', '美体', '精油', '美容美体仪器', '饰品', '珠宝', '奶粉', '辅食', '营养品', '零食', '童鞋', '童装', '玩具', '童车', '积木', '婴童用品', '床上用品', '家居饰品', '餐饮具', '茶', '厨房', '烹饪用具', '传统滋补营养品', '家庭', '个人清洁工具', '节庆用品', '酒类', '居家日用', '咖啡', '麦片', '冲饮', '粮油调味', '速食', '干货', '烘焙', '零食', '坚果', '特产', '收纳整理', '户外', '旅行用品', '瑜伽', '运动包', '运动服', '宠物', '宠物食品及用品服饰配件', '流行男鞋', '男装', '内衣', '女鞋', '女装', '箱包皮具', '3c数码配件', '文具电教', '文化用品', '商务用品', '厨房电器', '大家电', '个人护理', '保健', '按摩器材', '家庭保健', '生活电器', '影音电器', '彩妆', '香水', '美妆工具', '美容护肤', '美体', '精油', '美容美体仪器', '饰品', '珠宝', '奶粉', '辅食', '营养品', '零食', '童鞋', '童装', '玩具', '童车', '积木', '婴童用品', '床上用品', '家居饰品', '餐饮具', '茶', '厨房', '烹饪用具', '传统滋补营养品', '家庭', '个人清洁工具', '节庆用品', '酒类', '居家日用', '咖啡', '麦片', '冲饮', '粮油调味', '速食', '干货', '烘焙', '零食', '坚果', '特产', '收纳整理', '户外', '旅行用品', '瑜伽', '运动包', '运动服', '宠物', '宠物食品及用品']
+SECOND_CLASS_ITEM = ['男装', '内衣', '女鞋', '女装', '箱包皮具', '3c数码配件', '文具电教', '文化用品', '商务用品', '厨房电器', '大家电', '个人护理', '保健', '按摩器材', '家庭保健', '生活电器', '影音电器', '彩妆', '香水', '美妆工具', '美容护肤', '美体', '精油', '美容美体仪器', '饰品', '珠宝', '奶粉', '辅食', '营养品', '零食', '童鞋', '童装', '玩具', '童车', '积木', '婴童用品', '床上用品', '家居饰品', '餐饮具', '茶', '厨房', '烹饪用具', '传统滋补营养品', '家庭', '个人清洁工具', '节庆用品', '酒类', '居家日用', '咖啡', '麦片', '冲饮', '粮油调味', '速食', '干货', '烘焙', '零食', '坚果', '特产', '收纳整理', '户外', '旅行用品', '瑜伽', '运动包', '运动服', '宠物', '宠物食品及用品服饰配件', '流行男鞋', '男装', '内衣', '女鞋', '女装', '箱包皮具', '3c数码配件', '文具电教', '文化用品', '商务用品', '厨房电器', '大家电', '个人护理', '保健', '按摩器材', '家庭保健', '生活电器', '影音电器', '彩妆', '香水', '美妆工具', '美容护肤', '美体', '精油', '美容美体仪器', '饰品', '珠宝', '奶粉', '辅食', '营养品', '零食', '童鞋', '童装', '玩具', '童车', '积木', '婴童用品', '床上用品', '家居饰品', '餐饮具', '茶', '厨房', '烹饪用具', '传统滋补营养品', '家庭', '个人清洁工具', '节庆用品', '酒类', '居家日用', '咖啡', '麦片', '冲饮', '粮油调味', '速食', '干货', '烘焙', '零食', '坚果', '特产', '收纳整理', '户外', '旅行用品', '瑜伽', '运动包', '运动服', '宠物', '宠物食品及用品']
+
 MAX_COUPON_COUNT = 5
 DEFAULT_PAGE_SIZE = '100'
 TB_API_ROOT = 'http://gw.api.taobao.com/router/rest?'
@@ -217,6 +221,8 @@ class TbApiClient(object):
             return None
         commodity = Commodity(json_data.get('item_id', None), basic_info.get('short_title', None))
         commodity.annual_vol = basic_info.get('annual_vol', None)
+        commodity.level_one_category_id = basic_info.get('level_one_category_id', None)
+        commodity.level_one_category_name = basic_info.get('level_one_category_name', None)
         detail_list = self.tabao_tbk_commodity_detail(commodity.item_id)
         if not detail_list or type(detail_list) != list:
             return None
@@ -241,7 +247,9 @@ class TbApiClient(object):
         commodity.title = basic_info.get('title', None)
         commodity.sub_title = basic_info.get('sub_title', None)
         commodity.short_title = basic_info.get('short_title', None)
-        commodity.image_url = 'http:' + basic_info.get('pict_url', None)
+        commodity.image_url = basic_info.get('pict_url', None)
+        if commodity.image_url:
+            commodity.image_url = 'http:' + commodity.image_url
         commodity.brand_name = basic_info.get('brand_name', None)
         commodity.shop_name = basic_info.get('shop_title', None)
         commodity.tk_total_sales = basic_info.get('tk_total_sales', None)
@@ -249,7 +257,7 @@ class TbApiClient(object):
         coupon_url = publish_info.get('coupon_share_url', '')
         if not click_url or not coupon_url:
             return None
-        commodity.coupon_url = 'http:' + coupon_url
+        commodity.coupon_url = 'https:' + coupon_url
         commodity.click_url = 'http:' + click_url
         return commodity
 
@@ -270,6 +278,7 @@ class TbApiClient(object):
         for json_data in json_data_list:
             commodity = self.package_commodity(json_data)
             if commodity:
+                commodity.material_id = material_id
                 commodity_list.append(commodity)
         return commodity_list, ending_flag
 
@@ -280,17 +289,21 @@ class TbApiClient(object):
         }
         return self.common_query(postparm)
 
-    def taobao_tbk_urls_spread(self, urls):
+    def taobao_tbk_urls_spread(self, url):
+        urls = [url]
         urls_str = ','.join(['{"url": "%s"}' % url for url in urls])
         postparm = {
             'requests': '[%s]' % urls_str,
             'method': 'taobao.tbk.spread.get'
         }
         json_data_list = self.parse_json(self.common_query(postparm))
-        convert_link_list = []
-        for json_data in json_data_list:
-            convert_link_list.append(json_data.get('content', None))
-        return dict(zip(urls, convert_link_list))
+        if not json_data_list or type(json_data_list) != list:
+            return url
+
+        json_data = json_data_list[0]
+        if type(json_data) != dict:
+            return url
+        return json_data.get('content', url)
 
     def taobao_tbk_tpwd_create(self, text: str, url: str):
         '''
@@ -330,24 +343,25 @@ class TbApiClient(object):
         data = response.read()
         return self.taobao_tbk_tpwd_create(json.loads(data)['data']['content'], json.loads(data)['data']['url'])
 
-    def taobao_tbk_materials_upgrade(self):
-        page_no = '1'
+    def taobao_tbk_materials_upgrade(self, query, page_no=1):
+        print(f'获取物料关键词：{query}, 页码：{page_no}')
         # page_no = str(random.choices(['1', '2', '3', '4', '5', '6', '7', '8', '9'])[0])
         postparm = {
             'adzone_id': self.adzone_id,
-            'page_no': page_no,
+            'page_no': str(page_no),
             'page_size': DEFAULT_PAGE_SIZE,
-            'q': '运动',
+            'q': query,
             'method': 'taobao.tbk.dg.material.optional.upgrade',
             'has_coupon': 'true'
         }
         json_data_list = self.parse_json(self.common_query(postparm))
+        ending_flag = len(json_data_list) != int(DEFAULT_PAGE_SIZE)
         commodity_list = []
         for json_data in json_data_list:
             commodity = self.package_commodity(json_data)
             if commodity:
-                commodity_list.append(self.package_commodity(json_data))
-        return commodity_list
+                commodity_list.append(commodity)
+        return commodity_list, ending_flag
 
     def tabao_tbk_coupon_get(self, item_id, promotion_id):
         postparm = {
